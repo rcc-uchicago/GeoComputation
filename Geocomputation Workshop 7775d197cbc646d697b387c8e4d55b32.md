@@ -16,7 +16,7 @@ This workshop will introduce attendees to performing Geocomputation analysis usi
 
 All the exercise could be replicated on midway cluster. Anyway, if you don't have access to it, follow the exercise, try to understand the concept, and then you can replicate in your computer.
 
-## **Part 1: introduction to single-threaded and multithreaded geospatial tools such as GDAL/OGR, arcpy, and simple features (SF), raster, and stars packages in R.**
+## Introduction to single-threaded and multithreaded geospatial tools such as GDAL/OGR, arcpy, and simple features (SF), raster, and stars packages in R
 
 Geo-computation is the computation and manipulation of geographic data to answer different kinds of research questions. This data is becoming bigger and bigger, larger and larger, as you saw in the last ten years. So you really need powerful tools to be able to compute large processing analysis. You also need a huge computer-- so a supercomputer that we are using at UChicago. So the combination of powerful tools and powerful computers allows you to perform extensive analysis. Nonetheless, these tools, especially with GDAL, R, and python, can be used also on your laptop.
 
@@ -57,18 +57,19 @@ In the GDAL docs it recommends to use Conda to install GDAL however one of the a
 
 For this workshop we will use stable version and this can be download using the instructions at GDAL site [https://gdal.org/download.html](https://gdal.org/download.html).
 
-[https://github.com/rcc-uchicago/gdal_introduction](https://github.com/rcc-uchicago/gdal_introduction)
+*<u>How do I get GDAL on my computer</u>*
 
-How do I get GDAL on my computer
+###### Installation in Windows: 
 
-Installation in Windows: 
 1. Using network installer at OSGeo4W or  
 2. using conda install -c  conda-forge gdal
 
-Installation in Mac 
+###### Installation in Mac 
+
 http://www.kyngchaos.com/software/frameworks/    echo 'export PATH=/Library/Frameworks/GDAL.framework/Programs:$PATH' >> ~/.bash_profile source ~/.bash_profile
 
-Installation in Ubuntu: 
+###### Installation in Ubuntu: 
+
 sudo apt-get install gdal-bin
 
 ### Basic Examples
@@ -100,6 +101,7 @@ ogrinfo -so gadm36_COL_1.shp gadm36_COL_1
 ### Geocomputation in R
 
 In general, R requires dataset to be loaded into memory. A notable feature of the raster package is that it can work with raster datasets that are stored on disk and are too large to be loaded into memory(RAM). The package is built around a number of 'S4' classes of which the RasterLayer, RasterBrick, and RasterStack classes are the most important.
+
 A RasterLayer object represents single-layer (variable) raster data. A RasterLayer object always stores a number of fundamental parameters that describe it. These include the number of columns and rows, the coordinates of its spatial extent ('bounding box'), and the coordinate reference system (the 'map projection').
 In addition, a RasterLayer can store information about the file in which the raster cell values are stored (if there is such a file). A RasterLayer can also hold the raster cell values in memory.
 
@@ -282,7 +284,7 @@ mpirun  ./my_executable
 
 ## Writing simple Bash scripts for raster and vector processing
 
-Arcpy 
+Using arcpy on Midway and MidwayR
 ```bash
 export ARCGISHOME=$HOME/arcgis/server
 
@@ -316,29 +318,30 @@ address_fields = "street Address; City City; State State; ZIP zip"
 geocode_result = "geocode_result"
 arcpy.GeocodeAddresses(address_table, address_locator, address_fields, geocode_result, 'STATIC')
 ```
-GDAL commands
+**GDAL script example**: Merge DEMs, create contour lines, perform hill-shade analysis, calculate slope, and use the raster calculator to select higher slop areas.
 
+```bash
+#Merge two rasters
+gdal_merge –o mymerge.tif t27elu.dem t28elu.dem –ps 20 20
+
+#Create contour lines
+gdal_contour mymerge.tif mycontours.shp –i 20
+
+#Hillshade
+gdaldem hillshade mymerge.tif hillshade_30.tif –alt 45
+
+#Slope
+gdaldem slope mymerge.tif slope.tif
+
+#raster calculator
+gdal_calc --calc=“A*(A>80)” -A slope.tif --outfile=slopebin.tif
 ```
-`gdalinfo lights.tif`
+------
 
-`gdal_merge –o mymerge.tif t27elu.dem t28elu.dem –ps 20 20`
+#### More Information on Opensource GIS
 
-Create contour lines
+**[OSGeo-Live](http://live.osgeo.org/en/index.html) is a self-contained bootable DVD, USB thumb drive or Virtual Machine based on Lubuntu. We encourage using this Virtual Machine.**
 
-`gdal_contour mymerge.tif mycontours.shp –i 20`
-Hillshade
-
-`gdaldem hillshade mymerge.tif hillshade_30.tif –alt 45`
-Slope
-
-`gdaldem slope mymerge.tif slope.tif`
-
-raster calculator
-
-`gdal_calc --calc=“A*(A>80)” -A slope.tif --outfile=slopebin.tif`
-```
-### **More information**
-
-[**OSGeo-Live](http://live.osgeo.org/en/index.html)** is a self-contained bootable DVD, USB thumb drive or Virtual Machine based on Lubuntu. We encourage using this Virtual Machine.
+#### **More Information on HPC Topics**
 
 **XSEDE HPC Workshop Series**: [https://www.psc.edu/training-education/hpc-workshop-series](https://www.psc.edu/training-education/hpc-workshop-series)
