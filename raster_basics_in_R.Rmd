@@ -1,0 +1,289 @@
+ In general, R requires dataset to be loaded into memory. A notable feature of the raster package is that it can work with   raster datasets that are stored on disk and are too large to be loaded into memory
+ (RAM). The package is built around a number of 'S4' classes of which the RasterLayer,
+ RasterBrick, and RasterStack classes are the most important.
+ A RasterLayer object represents single-layer (variable) raster data. A RasterLayer
+ object always stores a number of fundamental parameters that describe it. These
+ include the number of columns and rows, the coordinates of its spatial extent
+ ('bounding box'), and the coordinate reference system (the 'map projection').
+ In addition, a RasterLayer can store information about the file in which the
+ raster cell values are stored (if there is such a file). A RasterLayer can also
+ hold the raster cell values in memory.
+ 
+ The raster package has two classes for multi-layer data the RasterStack and the RasterBrick.
+
+Unsigned Integer vs Signed Integer
+an unsigned integer is always non-negative numbers. But a signed integer can store negative values.
+With an 8-bit unsigned raster, valid values are from 0 to 255. This means that an 8-bit raster has 256 values in total.
+
+
+```{r}
+# load the raster, sp, and rgdal packages
+install.packages("pacman")
+
+```
+
+    Installing package into ‘/home/nbuser/R’
+    (as ‘lib’ is unspecified)
+
+
+
+```{r}
+install.packages("rgdal")
+```
+
+    Installing package into ‘/home/nbuser/R’
+    (as ‘lib’ is unspecified)
+    Warning message in install.packages("rgdal"):
+    “installation of package ‘rgdal’ had non-zero exit status”
+
+
+```{r}
+library(pacman)
+p_load(rgdal)
+p_load(raster)
+p_load(sp)
+p_load(sf)
+p_load(fasterize)
+```
+download gridded population data
+
+```{r}
+dir.create("rasterdata")
+setwd(file.path(getwd(),"rasterdata"))
+getwd()
+rf1<-"NPL_ppp_2020_v2.tif"
+rf2<-"NPL_pph_2020_v2.tif"
+
+if(!file.exists(rf1)){
+file.path1 <-"ftp://ftp.worldpop.org.uk/GIS/Population/Individual_countries/NPL/Nepal_100m_Population/NPL_ppp_2020_v2.tif"
+    download.file(file.path1, rf1,  mode = "wb")
+        }
+if(!file.exists(rf2)){
+file.path2 <-"ftp://ftp.worldpop.org.uk/GIS/Population/Individual_countries/NPL/Nepal_100m_Population/NPL_pph_2020_v2.tif"
+    download.file(file.path2, rf2,  mode = "wb")
+        }
+```
+
+
+```{r}
+setwd(file.path(getwd(),"rasterdata"))
+rf1<-"NPL_ppp_2020_v2.tif"
+rf2<-"NPL_pph_2020_v2.tif"
+file.exists(rf1)
+file.exists(rf2)
+```
+
+
+TRUE
+
+
+
+TRUE
+
+
+
+```{r}
+## ----load-raster---------------------------------------------------------
+# load raster in an R object called PD (population density)
+
+```
+
+
+
+```{r}
+PD<-raster(rf1)
+# look at the raster attributes. 
+PD
+
+# calculate and save the min and max values of the raster to the raster object
+PD <- setMinMax(PD)
+
+# view raster attributes
+PD
+
+#Get min and max cell values from raster
+#NOTE: this code may fail if the raster is too large
+cellStats(PD, min)
+cellStats(PD, max)
+```
+
+view coordinate reference system
+
+```{r}
+## ----crs-----------------------------------------------------------------
+
+PD@crs
+```
+
+view raster extent
+```{r}
+## ----view-extent---------------------------------------------------------
+
+PD@extent
+
+```
+
+
+```{r}
+## ----crop raster-------------------------------------------------
+## 
+plot(PD)
+## #Define the extent of the crop by clicking on the plot
+cropbox1 <- drawExtent()
+## #crop the raster, then plot the new cropped raster
+PDcrop1 <- crop(PD, cropbox1)
+## 
+## #plot the cropped extent
+plot(PDcrop1)
+## 
+```
+
+
+```{r}
+## ----crop Kathmandu area-----------------------------------------
+
+#download Nepal shapefile
+nepal_shp<-getData('GADM', country="NEPAL", level=3)
+plot(nepal_shp)
+#select Kathmandu region
+Kathmandu_shp<-nepal_shp[nepal_shp$NAME_3 %in% c("Kathmandu", "Bhaktapur", "Lalitpur"),]
+
+plot(Kathmandu_shp)
+invisible(text(coordinates(Kathmandu_shp), labels=as.character(Kathmandu_shp$NAME_3)))
+
+#Crop Kathmandu region
+PD_kath <- crop(PD, Kathmandu_shp)
+```
+
+
+```{r}
+## ----histogram-----------------------------------------------------------
+
+# the distribution of values in the raster
+hist(PD_kath, main="Distribution of population counts", col= "purple")
+
+```
+
+
+```{r}
+## ----plot-raster---------------------------------------------------------
+# add a color map with 5 colors
+col=topo.colors(5)
+# specify the colors using color-ramp 
+colr <- colorRampPalette(c("navyblue", "steelblue", "limegreen", "yellow", "#FEFEFE"))(255)
+# add breaks to the colormap (6 breaks = 5 segments)
+brk <- c(0, 5, 10, 35, 100, 1100)
+
+# create a plot of our raster
+image(PD_kath, col = col)
+```
+
+
+```{r}
+# specify the range of values that you want to plot in the PD
+# just plot pixels between 0 and 100
+image(PD_kath, zlim=c(0,100), col = col, main = "Population Distribution")
+#overlay boundary
+plot(Kathmandu_shp, add=T, border='white')
+
+```
+
+
+```{r}
+#Plot cropped area
+plot(PD_kath, main="Population Distribution - Kathmandu", col=colr)
+#overlay boundary
+plot(Kathmandu_shp, add=T, col=rgb(red=0, blue=0, green=0, alpha=0.1))
+
+```
+
+
+```{r}
+## ----plot-with-breaks----------------------------------------------------
+plot(PD_kath, col=col, breaks=brk, main="Counts with more breaks", legend = FALSE)
+
+```
+
+
+```{r}
+#project raster to 100 meters resolution
+
+#define a projection: https://proj4.org/usage/projections.html
+ prj<-"+proj=tmerc +lat_0=0 +lon_0=84 +k=0.9996 +x_0=500000 +y_0=0 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0"
+### One single line is sufficient to project any raster to any projection
+ PD_kath_prj<-projectRaster(PD_kath, crs=crs(prj), res = 100)
+```
+
+
+```{r}
+#multilayer raster example
+ # Using the previously generated RasterLayer object
+ r<-PD_kath
+ # Let's first put some values in the cells of the layer
+ r[] <- rnorm(n=ncell(r))
+ # Create a RasterStack object with 3 layers
+ s <- stack(x=c(r, r*2, r^2))
+ # The exact same procedure works for creating a RasterBrick
+ b <- brick(x=c(r, r*2, r))
+ # Let's look at the properties of of one of these two objects
+ b
+```
+
+
+```{r}
+ #load raster stack from disk
+ listras<-list.files(pattern = ".tif$", full.names = T)
+ #listras<-listras[stringr::str_detect(listras, 'ppp')]
+ 
+ stackras<-stack(listras)
+ plot(stackras)
+ 
+```
+
+
+```{r}
+ #vector to raster conversion
+ temp_ras <- PD
+ temp_ras[]<-NA
+ 
+#load census level 4 data
+ #pop_sf<-st_read("./NPL_level4/ADMINPOP.shp")
+ pop_sf<-getData('GADM', country="NEPAL", level=4)
+ pop_sf$ID_4<-1:nrow(pop_sf)
+ gridz <- rasterize(pop_sf, temp_ras, field = "ID_4");
+ #much faster using fasterize but requires sf format data
+ pop_sf<-st_as_sf(pop_sf)
+ gridz1 <- fasterize::fasterize(pop_sf, temp_ras, field = "ID_4");
+ compareRaster(gridz, gridz1)
+ 
+```
+
+
+```{r}
+#Map Algebra Types
+ #Map algebra can be defined as local, focal, zonal and global operations.
+ 
+ #local operation on raster such change the value if individual cell based on some transformation
+ logPD<-log10(PD)
+```
+
+
+```{r}
+#calculate zonal statistics based on zone
+ zonal_grid <-zonal(PD, gridz, fun = "sum", na.rm = TRUE);
+head(zonal_grid)
+```
+
+
+```{r}
+#focal operation  such as moving average of 3 x 3 cells
+ focal_grid <- focal(PD, w=matrix(1/9, nc=3, nr=3))
+ head(focal_grid)
+```
+
+
+```{r}
+#global operation such as global sum
+ cellStats(PD, sum)
+ cellStats(PD, sd)
+```

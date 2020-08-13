@@ -83,23 +83,31 @@ where filename is the name of your raster. This is used mostly to:
 
 See what projection your raster is in, and to check the extent of the raster.
 
-## Part 2: implicit and explicit parallelization
+```bash
+$ gdalinfo col_viirs_100m_2016.tif
+```
 
-Basic Definitions:
+The output gives us a lot of information about this file including its coordinate system (if it has one), the pixel size, origin, metadata, the compression used on the file and the color ramp.
 
-• A **processor** is a small chip that responds to and processes the basic instructions that drive a computer. The term *processor* is used interchangeably with the term **central processing unit** (CPU)
+**OGRINFO:** open a new command prompt window in Data/Vector/Shapefile
 
-• **Core**: The smallest compute unit that can run a program
+```bash
+ogrinfo gadm36_COL_1.shp
+ogrinfo -so gadm36_COL_1.shp
+ogrinfo -so gadm36_COL_1.shp gadm36_COL_1
+```
 
-• **Socket:** A compute unit, packaged as one and usually made of a single chip often called processor. Modern sockets carry many cores (10, 14, or 20, 24, 28, etc. on most servers)
+### Geocomputation in R
 
-• **Node:** A stand-alone computer system that contains one or more sockets, memory, storage, etc. connected to other nodes via a fast network interconnect.
+In general, R requires dataset to be loaded into memory. A notable feature of the raster package is that it can work with raster datasets that are stored on disk and are too large to be loaded into memory(RAM). The package is built around a number of 'S4' classes of which the RasterLayer, RasterBrick, and RasterStack classes are the most important.
+A RasterLayer object represents single-layer (variable) raster data. A RasterLayer object always stores a number of fundamental parameters that describe it. These include the number of columns and rows, the coordinates of its spatial extent ('bounding box'), and the coordinate reference system (the 'map projection').
+In addition, a RasterLayer can store information about the file in which the raster cell values are stored (if there is such a file). A RasterLayer can also hold the raster cell values in memory.
 
-> **Explicit parallelism** -- programmer must explicitly state which instructions can be executed in parallel.
+The raster package has two classes for multi-layer data the RasterStack and the RasterBrick
 
-> **Implicit parallelism** -- automatic detection by compiler of instructions that can be performed in parallel.
+**Open raster_basics_in_R.Rmd**
 
-## Part 3: introduction to Slurm
+## Introduction to Slurm
 
 • The RCC Midway compute systems
 
@@ -127,7 +135,7 @@ Basic Definitions:
 
 Schematic of the Midway Cluster
 
-Key Point to 
+**Key Point to Remember**
 
 There are about more than 1300+ nodes compute nodes on midway2, but only 2 login nodes.
 
@@ -224,7 +232,55 @@ To submit the above script:
 sbatch python.sbatch
 ```
 
-## Part 4: writing simple Bash scripts for raster and vector processing
+## Parallelization
+
+> **Explicit parallelism** -- programmer must explicitly state which instructions can be executed in parallel, e.g. MPI
+
+> **Implicit parallelism** -- automatic detection by compiler of instructions that can be performed in parallel. e.g. OpenMP
+
+**OpenMP Job**
+
+```bash
+#!/bin/bash
+
+#Here is a comment
+#SBATCH --time=1:00:00
+#SBATCH –partition=broadwl
+#SBATCH –nodes=1
+**#SBATCH –ntasks-per-node=8**
+#SBATCH --mem-per-cpu=2000
+#SBATCH –job-name=MyJob
+#SBATCH –output= MyJob-%j.out
+#SBATCH –error=MyJob-%j.err
+
+module load <module name>
+export OMP_NUM_THREADS=8 
+#Run your code
+./my_executable
+```
+
+OMP_NUM_THREADS is an environment variable.
+
+**Parallel MPI job**
+
+```bash
+#!/bin/bash
+#Here is a comment
+#SBATCH --time=1:00:00
+#SBATCH –job-name=MyJob
+#SBATCH –output= MyJob-%j.out
+#SBATCH –error=MyJob-%j.err
+#SBATCH –partition=broadwl
+#SBATCH –nodes=4
+#SBATCH –ntasks-per-node=8
+#SBATCH --mem-per-cpu=2000
+module load openmpi
+module load <module name>
+#Run your code
+mpirun  ./my_executable
+```
+
+## Writing simple Bash scripts for raster and vector processing
 
 `gdalinfo lights.tif`
 
@@ -243,6 +299,8 @@ Slope
 raster calculator
 
 `gdal_calc --calc=“A*(A>80)” -A slope.tif --outfile=slopebin.tif`
+
+### **More information**
 
 [**OSGeo-Live](http://live.osgeo.org/en/index.html)** is a self-contained bootable DVD, USB thumb drive or Virtual Machine based on Lubuntu. We encourage using this Virtual Machine.
 
