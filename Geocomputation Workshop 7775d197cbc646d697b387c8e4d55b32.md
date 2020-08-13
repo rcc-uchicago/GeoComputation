@@ -282,6 +282,43 @@ mpirun  ./my_executable
 
 ## Writing simple Bash scripts for raster and vector processing
 
+Arcpy 
+```bash
+export ARCGISHOME=$HOME/arcgis/server
+
+# If you need only Python and arcpy you don't need to start the server.
+# Note that you have to use ArcGIS' own Python installation instead of the
+# default system installation. Python on ArcGIS Server for Linux runs
+# a Windows version of Python under Wine.
+
+# You start the ArcGIS Python console with:
+/home/<user>/arcgis/server/tools/python
+
+#If it does not work, Use Anaconda3 2019.03 module 
+module load Anaconda3/2019.03
+source activate arcpy
+
+```
+
+Open Python and test if 'import arcpy' works.
+
+**Geocoding Example**
+
+```bash
+import arcpy
+from arcpy import env
+env.workspace = "home/pnsinha/Documents/Geocoding/atlanta.gdb
+arcpy.CreateAddressLocator_geocoding("US Address - Dual Ranges", "streets Primary", "'Feature ID' FeatureID VISIBLE NONE;'*From Left' L_F_ADD VISIBLE NONE;'*To Left' L_T_ADD VISIBLE NONE;'*From Right' R_F_ADD VISIBLE NONE;'*To Right' R_T_ADD VISIBLE NONE;'Prefix Direction' PREFIX VISIBLE NONE;'Prefix Type' PRE_TYPE VISIBLE NONE;'*Street Name' NAME VISIBLE NONE;'Suffix Type' TYPE VISIBLE NONE;'Suffix Direction' SUFFIX VISIBLE NONE;'Left City or Place' CITYL VISIBLE NONE;'Right City or Place' CITYR VISIBLE NONE;'Left Zipcode' ZIPL VISIBLE NONE;'Right Zipcode' ZIPR VISIBLE NONE;'Left State' State_Abbr VISIBLE NONE;'Right State' State_Abbr VISIBLE NONE", Atlanta_AddressLocator, "", "DISABLED")
+
+address_table = "customer"
+address_locator =  "Atlanta_AddressLocator"
+address_fields = "street Address; City City; State State; ZIP zip"
+geocode_result = "geocode_result"
+arcpy.GeocodeAddresses(address_table, address_locator, address_fields, geocode_result, 'STATIC')
+```
+GDAL commands
+
+```
 `gdalinfo lights.tif`
 
 `gdal_merge –o mymerge.tif t27elu.dem t28elu.dem –ps 20 20`
@@ -299,7 +336,7 @@ Slope
 raster calculator
 
 `gdal_calc --calc=“A*(A>80)” -A slope.tif --outfile=slopebin.tif`
-
+```
 ### **More information**
 
 [**OSGeo-Live](http://live.osgeo.org/en/index.html)** is a self-contained bootable DVD, USB thumb drive or Virtual Machine based on Lubuntu. We encourage using this Virtual Machine.
