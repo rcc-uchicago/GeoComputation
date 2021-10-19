@@ -26,7 +26,7 @@ Geo-computation is the computation and manipulation of geographic data to answer
 
 `$`
 
-![Geocomputation%20Workshop/Untitled.png](Geocomputation%20Workshop/Untitled.png)
+![images/Untitled.png](images/Untitled.png)
 
 ### Spatial Data Formats:
 
@@ -120,7 +120,7 @@ Midway is a constellation a of many compute systems and storage with various arc
 
 Slurm is the software used to manage the workload on Midway.
 
-![Geocomputation%20Workshop/Untitled%201.png](Geocomputation%20Workshop/Untitled%201.png)
+![images/Untitled%201.png](images/Untitled%201.png)
 
 Basic Definitions:
 
@@ -132,9 +132,9 @@ Basic Definitions:
 
 • **Node:** A stand-alone computer system that contains one or more sockets, memory, storage, etc. connected to other nodes via a fast network interconnect.
 
-![Geocomputation%20Workshop/Untitled%202.png](Geocomputation%20Workshop/Untitled%202.png)
+![images/Untitled%202.png](images/Untitled%202.png)
 
-![Geocomputation%20Workshop/Untitled%203.png](Geocomputation%20Workshop/Untitled%203.png)
+![images/Untitled%203.png](images/Untitled%203.png)
 
 Schematic of the Midway Cluster
 
